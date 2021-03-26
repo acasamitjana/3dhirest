@@ -27,10 +27,13 @@ arg_parser = ArgumentParser(description='Simple equalization (linear regression)
                                         'histology reconstruction contrast (grayscale, color images')
 arg_parser.add_argument('--zres', type=float, default=0.5, help='Resolution on the direction of the stack')
 arg_parser.add_argument('--filepath', type=str, help='Filepath of \"*.tree\" file to equalize ')
+arg_parser.add_argument('--mfilepath',  default=None,  help='Filepath in \"*.tree\" format used to mask the image file. '
+                                                            'Optional: (str, None) ')
 
 arguments = arg_parser.parse_args()
 filepath = arguments.filepath
 zres = arguments.zres
+mfilepath = arguments.mfilepath
 
 assert '.tree' in filepath
 filename = basename(filepath).split('.tree')[0]
@@ -40,26 +43,40 @@ outlier_limits = (140, 170)
 brightness_f = lambda R, G, B: 0.2126 * R + 0.7152 * G + 0.0722 * B
 
 ## Read images
+print('Reading images ....')
 proxy = nib.load(join(mri_dir, 'MRI_images.nii.gz'))
 data_M = np.asarray(proxy.dataobj)
 
 proxy = nib.load(filepath)
 IMAGE_RES = np.linalg.norm(proxy.affine, 2, axis=0)[0]
-
 data_H = np.asarray(proxy.dataobj)
+
 if data_H.shape[-1] == 3:
     colored = True
 else:
     colored = False
 
+if mfilepath is not None:
+    proxy = nib.load(mfilepath)
+    mask_H = np.asarray(proxy.dataobj) > 0.5
+    if colored:
+        data_H[~mask_H, 0] = 0
+        data_H[~mask_H, 1] = 0
+        data_H[~mask_H, 2] = 0
+    else:
+        data_H[mask_H==0]=0
+else:
+    mask_H = data_H > 0
+
 ## Compute image statistics
+print('Computing image statistics ...')
 median_H = []
 median_M = []
 for it_s in range(nslices):
     H = brightness_f(data_H[..., it_s, 0], data_H[..., it_s, 1], data_H[..., it_s, 2]) if colored else data_H[..., it_s]
     M = data_M[..., it_s]
 
-    H_M = H > 0
+    H_M = mask_H[..., it_s]
     M_M = M > 0
     m = np.median(M[M_M])
     if m > outlier_limits[0] and m < outlier_limits[1] and np.sum(H_M) > 0:
@@ -73,14 +90,14 @@ lr.fit(np.asarray(median_M).reshape(-1,1), np.asarray(median_H).reshape(-1,1))
 a = lr.coef_
 b = lr.intercept_
 
-
+print('Equalizing ...')
 ## Equalization (i.e. brightness and contrast) with the deviation from the previous linear regression
 data_H_eq = np.zeros(image_shape + (nslices,3)) if colored else np.zeros(image_shape + (nslices,))
 for it_s in range(nslices):
     H = brightness_f(data_H[..., it_s, 0], data_H[..., it_s, 1], data_H[..., it_s, 2]) if colored else data_H[..., it_s]
     M = data_M[..., it_s]
 
-    H_M = H > 0
+    H_M = mask_H[..., it_s]
     M_M = M > 0
     m = np.median(M[M_M])
     if np.sum(H_M) > 0:
@@ -93,7 +110,7 @@ for it_s in range(nslices):
             new_H = new_h/h*H
             data_H_eq[..., it_s] = np.clip(new_H, 0, 255)
 
-
+print('Writing to disk ...')
 ## Resampling at the desired resolution
 inplane_factor = INIT_RES / IMAGE_RES
 aux = np.asarray([(inplane_factor - 1) / (2 * inplane_factor)] * 2 + [0])
@@ -106,5 +123,6 @@ if colored:
 else:
     vol, aff = build_regular_space_volume(data_H_eq, z_pos, cog_xy, IMAGE_RES, target_sp=zres)
 
+vol = vol.astype('uint8')
 img = nib.Nifti1Image(vol, np.matmul(TrotInv, aff))
-nib.save(img, join(dirname(filepath), filename + '.eq_easy.resampled.' + str(zres) + '.nii.gz'))
+nib.save(img, join(dirname(filepath), filename + '.3D.' + str(zres) + '.nii.gz'))

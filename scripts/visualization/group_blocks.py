@@ -124,6 +124,7 @@ for reg_algorithm in reg_algorithm_list:
 
         vol, aff = build_regular_space_volume(vol, z_pos, cog_xy, BLOCK_RES, target_sp=Z_RES, max_z_error=0.1)
 
+        vol = vol.astype('uint8')
         img = nib.Nifti1Image(vol, np.matmul(TrotInv, aff))
         nib.save(img,join(path, stain + '.resampled_' + str(Z_RES) + '.nii.gz'))
 
