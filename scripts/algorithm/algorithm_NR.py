@@ -12,7 +12,7 @@ from src.utils.image_utils import deform2D
 from scripts import config_dev as configFile, config_data
 from src.algorithm import *
 
-file = 'slice_separation_extended.csv'
+file = 'slice_separation.csv'
 slice_num_dict = read_slice_info(file, stain=['MRI', 'IHC', 'NISSL'])
 affine = configFile.HISTO_AFFINE
 
@@ -24,6 +24,7 @@ if __name__ == '__main__':
 
     # Parameters
     arg_parser = ArgumentParser(description='Computes the prediction of certain models')
+    arg_parser.add_argument('--nc', type=int, default=2, choices=[2, 3], help='Number of contrasts')
     arg_parser.add_argument('--c1', type=str, default='IHC', choices=['IHC', 'NISSL'], help='Reference volume modality')
     arg_parser.add_argument('--c2', type=str, default='NISSL', choices=['IHC', 'NISSL', ''], help='Reference volume modality')
     arg_parser.add_argument('--cost', type=str, default='l1', choices=['l1', 'l2'], help='Likelihood cost function')
@@ -31,18 +32,13 @@ if __name__ == '__main__':
     arg_parser.add_argument('--mdil', type=int, default=7, help='Mask dilation factor')
 
     arguments = arg_parser.parse_args()
+    N_CONTRASTS = arguments.nc
     ref = 'MRI'
     c1 = arguments.c1
     c2 = arguments.c2
     nneighbours = arguments.nn
     cost = arguments.cost
     mdil = arguments.mdil
-
-    if c2 == '':
-        N_CONTRASTS = 2
-    else:
-        N_CONTRASTS = 3
-
 
     observations_dir = config_data.OBSERVATIONS_DIR_NR
     algorithm_dir = config_data.ALGORITHM_DIR
@@ -70,7 +66,7 @@ if __name__ == '__main__':
         input_dir = join(observations_dir, sbj.id)
         subject_dir = join(parameter_dict_MRI['DB_CONFIG']['BASE_DIR'], sbj.id)
 
-        if not exists(join(input_dir, c1 + '.' + nneighbours + 'N.field_x.tree.nii.gz')):
+        if not exists(join(input_dir, c1 + '.' + str(nneighbours) + 'N.field_x.tree.nii.gz')):
             print('[WARNING] No observations found for subject ' + sbj.id + ', contrast ' + c1 +  ' and NiftyReg ')
             continue
 
