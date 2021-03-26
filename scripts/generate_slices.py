@@ -28,24 +28,25 @@ ALADINcmd = NiftyRegPath + 'reg-apps' + '/reg_aladin'
 TRANSFORMcmd = NiftyRegPath + 'reg-apps/reg_transform'
 REScmd = NiftyRegPath + 'reg-apps' + '/reg_resample'
 
-INIT_BASE_DIR = DOWNLOADS_DIR
+INIT_BASE_DIR = join(DATA_DIR, 'downloads')
 INIT_BASE_DIR_MRI = join(INIT_BASE_DIR, 'mri')
 INIT_BASE_DIR_IHC = join(INIT_BASE_DIR, 'ihc')
 INIT_BASE_DIR_NISSL = join(INIT_BASE_DIR, 'nissl')
+INIT_BASE_DIR_LINEAL = join(INIT_BASE_DIR, 'linear')
 
-BASE_DIR = DATA_DIR
+MRI_ORIG = join(INIT_BASE_DIR_LINEAL, 'mri.orig.nii.gz')
+MRI_LIN = join(INIT_BASE_DIR_LINEAL, 'mri.nii.gz')
+HISTO_LIN = join(INIT_BASE_DIR_LINEAL, 'stack_nissl.lin.tree.nii.gz')
+
+
+BASE_DIR = join(DATA_DIR, 'dataset')
 BASE_DIR_MRI = join(BASE_DIR, 'mri')
 BASE_DIR_IHC = join(BASE_DIR, 'ihc')
 BASE_DIR_NISSL = join(BASE_DIR, 'nissl')
-BASE_DIR_LINEAL = join(BASE_DIR, 'linear')
 
 create_results_dir(BASE_DIR_MRI, subdirs=['images', 'masks'])
 create_results_dir(BASE_DIR_IHC, subdirs=['images_resize', 'masks_resize', 'images', 'masks', 'affine'])
 create_results_dir(BASE_DIR_NISSL, subdirs=['images_resize', 'masks_resize', 'images', 'masks', 'affine'])
-
-MRI_ORIG = join(BASE_DIR_LINEAL, 'mri.nii.gz')
-MRI_LIN = join(BASE_DIR_LINEAL, 'mri.lin.nii.gz')
-HISTO_LIN = join(BASE_DIR_LINEAL, 'stack_nissl.lin.tree.nii.gz')
 
 #######################
 ###### Parameters #####
@@ -63,7 +64,7 @@ slice_num_dict = read_slice_info(file, stain=['MRI', 'IHC', 'NISSL'])
 proxy = nib.load(HISTO_LIN)
 histo_shape_rigid = proxy.shape # Is that needed?
 
-z_pos = np.load(join(BASE_DIR_LINEAL, 'z_pos.npy'))
+z_pos = np.load(join(INIT_BASE_DIR_LINEAL, 'z_pos.npy'))
 #########################
 ###### Resample MRI #####
 #########################
@@ -126,8 +127,8 @@ def resample_mri(mri_vol, inplane_shape, nslices, MRI_AFFINE, OUTPUT_RES, z_pos)
     return mri_resampled_numpy, mri_mask_resampled_numpy
 
 
-# mri_resampled_numpy, mri_mask_resampled_numpy = \
-#     resample_mri(mri_vol, inplane_shape, nslices, MRI_AFFINE, OUTPUT_RES, z_pos)
+mri_resampled_numpy, mri_mask_resampled_numpy = \
+    resample_mri(mri_vol, inplane_shape, nslices, MRI_AFFINE, OUTPUT_RES, z_pos)
 
 ############################
 ###### Generate slices #####

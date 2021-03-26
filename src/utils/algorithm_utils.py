@@ -166,7 +166,7 @@ def integrate_NR(svf, image_shape):
     flow = np.zeros((2,) + image_shape + (nslices,))
     for it_slice in range(nslices):
         fx = resize(flow_x[..., it_slice], image_shape)
-        fy = resize(flow_y[..., it_slice], image_shape)  
+        fy = resize(flow_y[..., it_slice], image_shape)
         if np.sum(fx) + np.sum(fy) == 0:
             continue
 

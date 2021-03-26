@@ -13,7 +13,7 @@ from src.utils.image_utils import build_regular_space_volume, build_regular_spac
 nslices = config_data.NSLICES
 image_shape = configFile.IMAGE_SHAPE
 mri_dir = join(DATA_DIR, 'dataset', 'mri')
-input_z_pos = join(DATA_DIR, 'dataset', 'linear', 'z_pos.npy')
+input_z_pos = join(DATA_DIR, 'downloads', 'linear', 'z_pos.npy')
 z_pos = 1 * np.squeeze(np.load(input_z_pos))
 
 INIT_RES = config_data.INIT_RES
