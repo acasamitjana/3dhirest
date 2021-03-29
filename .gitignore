@@ -1,2 +1,5 @@
 #PyCharm files
 __pychace__
+*.pyc
+
+*tmp*
