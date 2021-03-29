@@ -26,10 +26,10 @@ Needed to download data from the Allen repository.
   - _config_data.py_: data parameters are specified here. You may not want to modify this file
 
 - **Download data from the Allen repository** <br />
-  From /database/preprocessing, run the download_allen.m script to download all sections and generate the corresponding masks. The initial linear alignment between the histology stack and the MR volume would be also downloaded from our public data repository (XXXX). Finally, you'll also find the MNI template (T2 contrast) and the correspondig segmentation for mapping the reconstructions to the MNI space.
+  From /database/preprocessing, run the _download_allen.m_ script to download all sections and generate the corresponding masks. The initial linear alignment between the histology stack and the MR volume would be also downloaded from our public data repository (XXXX). Finally, you'll also find the MNI template (T2 contrast) and the correspondig segmentation for mapping the reconstructions to the MNI space.
   
 - **Create dataset** <br />
-  From /database/preprocessing, run the _generate_initial_images.py_ file in order to set the database properly to be used in the code (naming convention, ordering, etc...). _The slice_info_\*\.csv_ files are used to map images from the Allen repository to the database convention used in this project.
+  From /database/preprocessing, run the _generate_initial_images.py_ file in order to set the database properly to be used in the code (naming convention, ordering, etc...). The _slice\_info\_\* .csv_ files are used to map images from the Allen repository to the database convention used in this project.
   
  
 - **Generate images** <br />
