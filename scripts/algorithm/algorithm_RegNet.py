@@ -41,7 +41,6 @@ if __name__ == '__main__':
     cost = arguments.cost
     mdil = arguments.mdil
 
-
     observations_dir = config_data.OBSERVATIONS_DIR_REGNET
     algorithm_dir = config_data.ALGORITHM_DIR
     results_dir = join(algorithm_dir, 'ST' + str(N_CONTRASTS) + '_RegNet', cost, 'NN' + str(nneighbours))
@@ -152,18 +151,6 @@ if __name__ == '__main__':
         ####################################################################################################
         ####################################################################################################
 
-        #### TO DELETE!
-        # proxy = nib.load(join(results_dir_sbj, c1 + '.field_x.tree.nii.gz'))
-        # T_C1 = np.zeros((2,) + proxy.shape)
-        # T_C2 = np.zeros((2,) + proxy.shape)
-        # T_C1[0] = np.asarray(proxy.dataobj)
-        # proxy = nib.load(join(results_dir_sbj, c1 + '.field_y.tree.nii.gz'))
-        # T_C1[1] = np.asarray(proxy.dataobj)
-        #
-        # proxy = nib.load(join(results_dir_sbj, c2 + '.field_x.tree.nii.gz'))
-        # T_C2[0] = np.asarray(proxy.dataobj)
-        # proxy = nib.load(join(results_dir_sbj, c2 + '.field_y.tree.nii.gz'))
-        # T_C2[1] = np.asarray(proxy.dataobj)
 
         t_init = time.time()
         print('[' + str(sbj.id) + ' - INTEGRATION] Computing deformation field ... ')

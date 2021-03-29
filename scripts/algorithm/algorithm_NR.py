@@ -25,8 +25,8 @@ if __name__ == '__main__':
     # Parameters
     arg_parser = ArgumentParser(description='Computes the prediction of certain models')
     arg_parser.add_argument('--nc', type=int, default=2, choices=[2, 3], help='Number of contrasts')
-    arg_parser.add_argument('--c1', type=str, default='IHC', choices=['IHC', 'NISSL'], help='Reference volume modality')
-    arg_parser.add_argument('--c2', type=str, default='NISSL', choices=['IHC', 'NISSL', ''], help='Reference volume modality')
+    arg_parser.add_argument('--c1', type=str, default='NISSL', choices=['IHC', 'NISSL'], help='Reference volume modality')
+    arg_parser.add_argument('--c2', type=str, default='', choices=['IHC', 'NISSL', ''], help='Reference volume modality')
     arg_parser.add_argument('--cost', type=str, default='l1', choices=['l1', 'l2'], help='Likelihood cost function')
     arg_parser.add_argument('--nn', type=int, default=2, help='Number of neighbours')
     arg_parser.add_argument('--mdil', type=int, default=7, help='Mask dilation factor')
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         results_dir_sbj = join(results_dir, sbj.id)
         if not exists(join(results_dir_sbj)):
             makedirs(results_dir_sbj)
-        elif exists(join(results_dir_sbj, c1 + '.nii.gz')):
+        elif exists(join(results_dir_sbj, c1 + '.tree.nii.gz')):
             print('[DONE] Subject ' + sbj.id + ' has already been processed')
             num_tree_pos_prev += nslices
             continue
@@ -83,16 +83,16 @@ if __name__ == '__main__':
         ####################################################################################################
         ####################################################################################################
 
-        print('[Init Graph] Reading SVFs ...')
+        print('[' + str(sbj.id) + ' - Init Graph] Reading SVFs ...')
         t_init = time.time()
         if N_CONTRASTS == 2:
             graph_structure = init_st2(subject_dir, input_dir, cp_shape, nslices,
                                        nneighbours=nneighbours, se=np.ones((mdil, mdil)))
 
             R, M, W, d_inter, d_Ref, d_C1, NK = graph_structure
-            print('[Init Graph] Total Elapsed time: ' + str(time.time() - t_init))
+            print('[' + str(sbj.id) + ' - Init Graph] Total Elapsed time: ' + str(time.time() - t_init))
 
-            print('[ALGORITHM] Running the algorithm ...')
+            print('[' + str(sbj.id) + ' - ALGORITHM] Running the algorithm ...')
             if cost == 'L2':
                 Tres = st2_L2(R, M, W, d_inter, d_Ref, d_C1, nslices, niter=5)
 
@@ -118,9 +118,9 @@ if __name__ == '__main__':
                                        nneighbours=nneighbours, se=np.ones((mdil, mdil)))
 
             R, M, W, d_inter, d_Ref, d_C1, d_C2, NK = graph_structure
-            print('[Init Graph] Total Elapsed time: ' + str(time.time() - t_init))
+            print('[' + str(sbj.id) + ' - Init Graph] Total Elapsed time: ' + str(time.time() - t_init))
 
-            print('[ALGORITHM] Running the algorithm ...')
+            print('[' + str(sbj.id) + ' - ALGORITHM] Running the algorithm ...')
             if cost == 'L2':
                 Tres = st3_L2(R, M, W, d_inter, d_Ref, d_C1, d_C2, nslices, niter=5)
 
@@ -146,49 +146,48 @@ if __name__ == '__main__':
             img = nib.Nifti1Image(T_Ref[1], affine)
             nib.save(img, join(results_dir_sbj, ref + '.field_y.tree.nii.gz'))
 
-        else:
-            raise ValueError("[ERROR] The number of contrasts specified is not valid")
+
+        print('[' + str(sbj.id) + ' - ALGORITHM] Total Elapsed time: ' + str(time.time() - t_init))
 
         ####################################################################################################
         ####################################################################################################
-        print('[INTEGRATION] Computing deformation field ... ')
+        print('[' + str(sbj.id) + ' - INTEGRATION] Computing deformation field ... ')
         t_init = time.time()
-        if not exists(join(results_dir_sbj, c1 + '.flow.nii.gz')):
+        if not exists(join(results_dir_sbj, c1 + '.flow.tree.nii.gz')):
             flow_c1 = algorithm_utils.integrate_NR(T_C1, block_shape)
 
             img = nib.Nifti1Image(flow_c1, affine)
-            nib.save(img, join(results_dir_sbj, c1 + '.flow.nii.gz'))
+            nib.save(img, join(results_dir_sbj, c1 + '.flow.tree.nii.gz'))
 
-        if N_CONTRASTS==3 and not exists(join(results_dir_sbj, c2 + '.flow.nii.gz')):
+        if N_CONTRASTS==3 and not exists(join(results_dir_sbj, c2 + '.flow.tree.nii.gz')):
             flow_c2 = algorithm_utils.integrate_NR(T_C2, block_shape)
 
             img = nib.Nifti1Image(flow_c2, affine)
-            nib.save(img, join(results_dir_sbj, c2 + '.flow.nii.gz'))
+            nib.save(img, join(results_dir_sbj, c2 + '.flow.tree.nii.gz'))
 
-        print('[INTEGRATION] Total Elapsed time: ' + str(time.time() - t_init))
+        print('[' + str(sbj.id) + ' - INTEGRATION] Total Elapsed time: ' + str(time.time() - t_init))
 
         ####################################################################################################
         ####################################################################################################
 
-        print('[DEFORM] Deforming images ... ')
+        print('[' + str(sbj.id) + ' - DEFORM] Deforming images ... ')
 
         # IHC
         if c1 == 'IHC' or c2 == 'IHC':
             data_loader_IHC = DataLoaderBlock(parameter_dict_IHC)
             block_list_IHC = data_loader_IHC.subject_list
 
-            proxy = nib.load(join(results_dir_sbj, 'IHC.flow.nii.gz'))
+            proxy = nib.load(join(results_dir_sbj, 'IHC.flow.tree.nii.gz'))
             flow = np.asarray(proxy.dataobj)
 
             image_deformed = np.zeros(block_shape + (nslices,))
             mask_deformed = np.zeros(block_shape + (nslices,))
-
             for sl in block_list_IHC[it_sbj].slice_list:
                 it_sl = sl.tree_pos - num_tree_pos_prev
                 print('         Slice: ' + str(it_sl) + '/' + str(nslices))
 
-                image = sl.load_ihc()
-                mask = sl.load_ihc_mask()
+                image = sl.load_ref()
+                mask = sl.load_ref_mask()
 
                 image_deformed[..., it_sl] = deform2D(image, flow[..., it_sl])
                 mask_deformed[..., it_sl] = deform2D(mask, flow[..., it_sl], mode='nearest')
@@ -197,18 +196,17 @@ if __name__ == '__main__':
                 del mask
 
             img = nib.Nifti1Image(image_deformed, affine)
-            nib.save(img, join(results_dir_sbj, 'IHC.nii.gz'))
+            nib.save(img, join(results_dir_sbj, 'IHC.tree.nii.gz'))
 
             img = nib.Nifti1Image(mask_deformed, affine)
-            nib.save(img, join(results_dir_sbj, 'IHC.mask.nii.gz'))
-
+            nib.save(img, join(results_dir_sbj, 'IHC.mask.tree.nii.gz'))
 
         if c1 == 'NISSL' or c2 == 'NISSL':
             # NISSL
             data_loader_NISSL = DataLoaderBlock(parameter_dict_NISSL)
             block_list_NISSL = data_loader_NISSL.subject_list
 
-            proxy = nib.load(join(results_dir_sbj, 'NISSL.flow.nii.gz'))
+            proxy = nib.load(join(results_dir_sbj, 'NISSL.flow.tree.nii.gz'))
             flow = np.asarray(proxy.dataobj)
 
             image_deformed = np.zeros(block_shape + (nslices,))
@@ -218,22 +216,19 @@ if __name__ == '__main__':
                 it_sl = sl.tree_pos - num_tree_pos_prev
                 print('         Slice: ' + str(it_sl) + '/' + str(nslices))
 
-                image = sl.load_nissl()
-                mask = sl.load_nissl_mask()
+                image = sl.load_ref()
+                mask = sl.load_ref_mask()
 
                 # NISSL
                 image_deformed[..., it_sl] = deform2D(image, flow[..., it_sl])
                 mask_deformed[..., it_sl] = deform2D(mask, flow[..., it_sl], mode='nearest')
 
-
             img = nib.Nifti1Image(image_deformed, affine)
-            nib.save(img, join(results_dir_sbj, 'NISSL.nii.gz'))
+            nib.save(img, join(results_dir_sbj, 'NISSL.tree.nii.gz'))
 
             img = nib.Nifti1Image(mask_deformed, affine)
-            nib.save(img, join(results_dir_sbj, 'NISSL.mask.nii.gz'))
-
+            nib.save(img, join(results_dir_sbj, 'NISSL.mask.tree.nii.gz'))
 
         num_tree_pos_prev += nslices
 
-        print('[DEFORM] Total Elapsed time: ' + str(time.time() - t_init))
-
+        print('[' + str(sbj.id) + ' - DEFORM] Total Elapsed time: ' + str(time.time() - t_init))
