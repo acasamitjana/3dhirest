@@ -58,7 +58,7 @@ Needed to download data from the Allen repository.
 - Initial commit
 
 ## Citation
-TBC
+Casamitjana, Adrià, et al. "Robust joint registration of multiple stains and MRI for multimodal 3D histology reconstruction: Application to the Allen human brain atlas." Medical image analysis 75 (2022): 102265.
 
 ## References
 [1] [Model-based refinement of nonlinear registrations in 3D histology reconstruction](https://www.nmr.mgh.harvard.edu/~iglesias/pdf/MICCAI_2018_histoRecon.pdf)
